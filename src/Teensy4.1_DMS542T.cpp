@@ -12,6 +12,9 @@
 #define button1 4
 #define button2 5
 
+#define limitSwitch1 11
+#define limitSwitch2 12
+
 void setup() 
 {
   pinMode(pulsePin, OUTPUT);  // move motor
@@ -19,16 +22,23 @@ void setup()
 
   pinMode(button1,INPUT); // clockwise
   pinMode(button2,INPUT); // anti clockwise
+
+  pinMode(limitSwitch1, INPUT);
+  pinMode(limitSwitch1, INPUT);
 } 
 
 void loop() 
 {
   bool button1_value = digitalRead(button1);
   bool button2_value = digitalRead(button2);
+
+  bool limit1_value = digitalRead(limitSwitch1);
+  bool limit2_value = digitalRead(limitSwitch2);
   
   digitalWrite(pulsePin, HIGH);
   
-  if (button1_value == HIGH)
+  //Move linear rail away from motor
+  if (button1_value == HIGH && limit1_value != HIGH)
   { 
     digitalWrite(directionPin, HIGH);
     delayMicroseconds(500);
@@ -37,7 +47,8 @@ void loop()
     delayMicroseconds(500); 
   }
 
-  if (button2_value == HIGH)
+  //Move linear rail towards motor
+  else if (button2_value == HIGH && limit2_value != HIGH)
   {
     digitalWrite(directionPin, LOW);
     delayMicroseconds(500);
@@ -45,5 +56,7 @@ void loop()
     digitalWrite(pulsePin, LOW);
     delayMicroseconds(500); 
   }
+  else
+    digitalWrite(pulsePin, HIGH);
 
 }
