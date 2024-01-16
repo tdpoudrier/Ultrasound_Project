@@ -4,37 +4,17 @@
 **/
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <SPI.h>
 #include "Adafruit_VL53L0X.h"
 #include <Arduino.h>
 
 void updateStatusBar(uint32_t, uint32_t, int, uint8_t); 
 
-byte bar[] = {
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B11111
-};
-
-byte box[] = {
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111
-};
-
-// custom character code for check mark
+//Custom Characters
+byte bar[] = { B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
+byte box[] = { B11111, B11111, B11111, B11111, B11111, B11111, B11111, B11111};
 byte checkMark[] = { B00000, B00001, B00001, B00010, B00010, B10100, B10100, B01000 };
 
+//Create objects
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
