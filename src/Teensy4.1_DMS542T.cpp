@@ -32,6 +32,10 @@ void setup()
   pinMode(limitSwitch1, INPUT);
   pinMode(limitSwitch1, INPUT);
 
+  //turn on LED
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+
   DM542T_begin();
 } 
 
@@ -39,14 +43,15 @@ void loop()
 {
   bool button1_value = digitalRead(button1);
   bool button2_value = digitalRead(button2);
-
+  
   bool limit1_value = digitalRead(limitSwitch1);
   bool limit2_value = digitalRead(limitSwitch2);
 
   if(button1_value == HIGH && limit1_value != HIGH)
+  {
     StepAwayFromMotor(DIRECTION_PIN, PULSE_PIN);
-  
-  else if (button2_value == LOW && limit2_value != HIGH)
+  }
+  else if (button2_value == HIGH && limit2_value != HIGH)
     StepTowardMotor(DIRECTION_PIN, PULSE_PIN);
 }
 
@@ -59,11 +64,11 @@ void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
 {
   //direction leads pulse by >5us
   digitalWrite(directionPin, LOW);
-  delayMicroseconds(500);
+  delayMicroseconds(6);
 
   //pulse width is >2.5us
   digitalWrite(pulsePin, LOW);
-  delayMicroseconds(500);
+  delayMicroseconds(10);
 
   digitalWrite(pulsePin, HIGH);
 }
@@ -72,11 +77,11 @@ void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
 {
   //direction leads pulse by >5us
   digitalWrite(directionPin, HIGH);
-  delayMicroseconds(500);
+  delayMicroseconds(6); 
 
   //pulse width is >2.5us
   digitalWrite(pulsePin, LOW);
-  delayMicroseconds(500);
+  delayMicroseconds(10);
 
   digitalWrite(pulsePin, HIGH);
 }
