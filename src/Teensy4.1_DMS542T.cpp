@@ -1,7 +1,7 @@
 /*
   Stepper motor driver controller test
   buttons are used for user to move the motor
-  direction and pulse pins are connected to DMS542T through a 3.3V to 5V level shifter
+  direction and pulse pins are connected to DM542T through a 3.3V to 5V level shifter
 
   Limit switches are used to prevent the linear rail from hitting stoppers and from trying to move past stoppers, consuming current
 
@@ -66,7 +66,6 @@ void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
   delayMicroseconds(500);
 
   digitalWrite(pulsePin, HIGH);
-  delayMicroseconds(500);
 }
 
 void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
@@ -80,5 +79,4 @@ void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
   delayMicroseconds(500);
 
   digitalWrite(pulsePin, HIGH);
-  delayMicroseconds(500);
 }
