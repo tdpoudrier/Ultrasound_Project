@@ -9,24 +9,30 @@
 
 #include <Arduino.h>
 
-#define directionPin 2
-#define pulsePin 3
+//Define GPIO pins
+#define DIRECTION_PIN 2
+#define PULSE_PIN 3
 #define button1 4
 #define button2 5
-
 #define limitSwitch1 11
 #define limitSwitch2 12
 
+//Function declarations
+void StepAwayFromMotor(uint8_t, uint8_t);
+void StepTowardMotor(uint8_t, uint8_t);
+void DM542T_begin();
+
 void setup() 
 {
-  pinMode(pulsePin, OUTPUT);  // move motor
-  pinMode(directionPin, OUTPUT);// direction
-
-  pinMode(button1,INPUT); // clockwise
-  pinMode(button2,INPUT); // anti clockwise
-
+  //Initialize GPIO
+  pinMode(DIRECTION_PIN, OUTPUT);
+  pinMode(PULSE_PIN, OUTPUT);
+  pinMode(button1,INPUT); 
+  pinMode(button2,INPUT);
   pinMode(limitSwitch1, INPUT);
   pinMode(limitSwitch1, INPUT);
+
+  DM542T_begin();
 } 
 
 void loop() 
@@ -36,29 +42,43 @@ void loop()
 
   bool limit1_value = digitalRead(limitSwitch1);
   bool limit2_value = digitalRead(limitSwitch2);
+
+  if(button1_value == HIGH && limit1_value != HIGH)
+    StepAwayFromMotor(DIRECTION_PIN, PULSE_PIN);
   
+  else if (button2_value == LOW && limit2_value != HIGH)
+    StepTowardMotor(DIRECTION_PIN, PULSE_PIN);
+}
+
+void DM542T_begin()
+{
+  digitalWrite(PULSE_PIN, HIGH); //Set pulse pin high 
+}
+
+void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
+{
+  //direction leads pulse by >5us
+  digitalWrite(directionPin, LOW);
+  delayMicroseconds(500);
+
+  //pulse width is >2.5us
+  digitalWrite(pulsePin, LOW);
+  delayMicroseconds(500);
+
   digitalWrite(pulsePin, HIGH);
-  
-  //Move linear rail away from motor
-  if (button1_value == HIGH && limit1_value != HIGH)
-  { 
-    digitalWrite(directionPin, HIGH);
-    delayMicroseconds(500);
+  delayMicroseconds(500);
+}
 
-    digitalWrite(pulsePin, LOW);
-    delayMicroseconds(500); 
-  }
+void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
+{
+  //direction leads pulse by >5us
+  digitalWrite(directionPin, HIGH);
+  delayMicroseconds(500);
 
-  //Move linear rail towards motor
-  else if (button2_value == HIGH && limit2_value != HIGH)
-  {
-    digitalWrite(directionPin, LOW);
-    delayMicroseconds(500);
+  //pulse width is >2.5us
+  digitalWrite(pulsePin, LOW);
+  delayMicroseconds(500);
 
-    digitalWrite(pulsePin, LOW);
-    delayMicroseconds(500); 
-  }
-  else
-    digitalWrite(pulsePin, HIGH);
-
+  digitalWrite(pulsePin, HIGH);
+  delayMicroseconds(500);
 }
