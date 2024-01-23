@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "Adafruit_VL53L0X.h"
+#include <DM542T.h>
 
 //GPIO constants
 #define DIRECTION 2
