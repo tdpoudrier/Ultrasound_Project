@@ -7,7 +7,6 @@ DM542T::DM542T(uint8_t directionPin, uint8_t pulsePin)
 {
     DirectionPin = directionPin;
     PulsePin = pulsePin;
-    MicrosecondDelay = DEFAULT_DELAY;
     CurrentDirection = LOW;
 }
 
@@ -32,16 +31,6 @@ void DM542T::StepMotor()
     digitalWrite(PulsePin, LOW);
     delayMicroseconds(5);
     digitalWrite(PulsePin, HIGH);
-}
-
-void DM542T::SetDelay(uint32_t delay)
-{
-    MicrosecondDelay = delay;
-}
-
-uint32_t DM542T::GetDelay()
-{
-    return MicrosecondDelay;
 }
 
 //Define direction with HIGH or LOW
