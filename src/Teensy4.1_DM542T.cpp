@@ -21,6 +21,15 @@
 void StepAwayFromMotor(uint8_t, uint8_t);
 void StepTowardMotor(uint8_t, uint8_t);
 void DM542T_begin();
+void MoveMotor();
+
+IntervalTimer myTimer;
+
+bool button1_value = false;
+bool button2_value = false;
+
+bool limit1_value = false;
+bool limit2_value = false;
 
 void setup() 
 {
@@ -37,22 +46,18 @@ void setup()
   digitalWrite(LED_BUILTIN, HIGH);
 
   DM542T_begin();
+
+  myTimer.begin(MoveMotor, 500);
+  myTimer.priority(20);
 } 
 
 void loop() 
 {
-  bool button1_value = digitalRead(button1);
-  bool button2_value = digitalRead(button2);
+  button1_value = digitalRead(button1);
+  button2_value = digitalRead(button2);
   
-  bool limit1_value = digitalRead(limitSwitch1);
-  bool limit2_value = digitalRead(limitSwitch2);
-
-  if(button1_value == HIGH && limit1_value != HIGH)
-  {
-    StepAwayFromMotor(DIRECTION_PIN, PULSE_PIN);
-  }
-  else if (button2_value == HIGH && limit2_value != HIGH)
-    StepTowardMotor(DIRECTION_PIN, PULSE_PIN);
+  limit1_value = digitalRead(limitSwitch1);
+  limit2_value = digitalRead(limitSwitch2);
 }
 
 void DM542T_begin()
@@ -84,4 +89,14 @@ void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
   delayMicroseconds(10);
 
   digitalWrite(pulsePin, HIGH);
+}
+
+void MoveMotor ()
+{
+  if(button1_value == HIGH && limit1_value != HIGH)
+  {
+    StepAwayFromMotor(DIRECTION_PIN, PULSE_PIN);
+  }
+  else if (button2_value == HIGH && limit2_value != HIGH)
+    StepTowardMotor(DIRECTION_PIN, PULSE_PIN);
 }
