@@ -12,7 +12,18 @@
 #define LIM_SWITCH_2 12
 
 //Function prototypes
-void updateStatusBar(uint32_t, uint32_t, int, uint8_t); 
+void updateStatusBar(uint32_t, uint32_t, int, uint8_t);
+void StepAwayFromMotor(uint8_t, uint8_t);
+void StepTowardMotor(uint8_t, uint8_t);
+void DM542T_begin();
+void MoveMotor();
+
+IntervalTimer myTimer;
+
+bool button1_value = false;
+bool button2_value = false;
+bool limit1_value = false;
+bool limit2_value = false; 
 
 //Custom Characters
 byte bar[] = { B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
@@ -28,6 +39,16 @@ uint32_t ERROR_MARGIN = 10;
 
 void setup() 
 {
+  Serial.begin(9600);
+  
+  //Initalize TOF
+  if (!lox.begin()) 
+  {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while (1);
+  }
+  Serial.println(F("bootted VL53L0X"));
+
   //Initalize Pins
   pinMode(PULSE, OUTPUT);
   pinMode(DIRECTION, OUTPUT);
@@ -35,8 +56,9 @@ void setup()
   pinMode(BUTTON_2,INPUT);
   pinMode(LIM_SWITCH_1, INPUT);
   pinMode(LIM_SWITCH_2, INPUT);
+ 
+ //turn on led
   pinMode(LED_BUILTIN, OUTPUT);
-
   digitalWrite(LED_BUILTIN, HIGH);
 
   //Initialize LCD
@@ -45,44 +67,16 @@ void setup()
   lcd.createChar(0, checkMark);
   lcd.createChar(1, box);
   lcd.createChar(6, bar);
+  Serial.println(F("booted LCD"));
 
-  //check if TOF is connected
-  if (!lox.begin()) 
-  {
-    Serial.println(F("Failed to boot VL53L0X"));
-    while (1);
-  }
+  //initalize stepper motor controller
+  DM542T_begin();
+  myTimer.begin(MoveMotor, 500);
+  myTimer.priority(20);
 } 
 
 void loop() 
 {
-  bool button1_value = digitalRead(BUTTON_1);
-  bool button2_value = digitalRead(BUTTON_2);
-
-  bool limit1_value = digitalRead(LIM_SWITCH_1);
-  bool limit2_value = digitalRead(LIM_SWITCH_2);
-  
-  digitalWrite(PULSE, HIGH);
-  
-  //Move linear rail away from motor
-  if (button1_value == HIGH && limit1_value != HIGH)
-  { 
-    digitalWrite(DIRECTION, HIGH);
-    delayMicroseconds(500);
-
-    digitalWrite(PULSE, LOW);
-    delayMicroseconds(500); 
-  }
-
-  //Move linear rail towards motor
-  else if (button2_value == HIGH && limit2_value != HIGH)
-  {
-    digitalWrite(DIRECTION, LOW);
-    delayMicroseconds(500);
-
-    digitalWrite(PULSE, LOW);
-    delayMicroseconds(500); 
-  }
 
   String dataString = "";
 
@@ -109,6 +103,53 @@ void loop()
   lcd.setCursor(0, 0);
   lcd.print(dataString);
 
+}
+
+void DM542T_begin()
+{
+  digitalWrite(PULSE, HIGH); //Set pulse pin high 
+}
+
+void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
+{
+  //direction leads pulse by >5us
+  digitalWrite(directionPin, LOW);
+  delayMicroseconds(6);
+
+  //pulse width is >2.5us
+  digitalWrite(pulsePin, LOW);
+  delayMicroseconds(10);
+
+  digitalWrite(pulsePin, HIGH);
+}
+
+void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
+{
+  //direction leads pulse by >5us
+  digitalWrite(directionPin, HIGH);
+  delayMicroseconds(6); 
+
+  //pulse width is >2.5us
+  digitalWrite(pulsePin, LOW);
+  delayMicroseconds(10);
+
+  digitalWrite(pulsePin, HIGH);
+}
+
+void MoveMotor ()
+{
+  button1_value = digitalRead(BUTTON_1);
+  button2_value = digitalRead(BUTTON_2);
+  
+  limit1_value = digitalRead(LIM_SWITCH_1);
+  limit2_value = digitalRead(LIM_SWITCH_2);
+
+  if(button1_value == HIGH && limit1_value != HIGH)
+  {
+    StepAwayFromMotor(DIRECTION, PULSE);
+  }
+  else if (button2_value == HIGH && limit2_value != HIGH)
+    StepTowardMotor(DIRECTION, PULSE);
 }
 
 
