@@ -7,7 +7,7 @@
 #include "Adafruit_VL53L0X.h"
 #include <Arduino.h>
 
-void updateStatusBar(uint32_t, uint32_t, int, uint8_t); 
+void updateStatusBar(uint32_t, double, int, uint8_t); 
 
 //Custom Characters
 byte bar[] = { B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
@@ -17,6 +17,10 @@ byte checkMark[] = { B00000, B00001, B00001, B00010, B00010, B10100, B10100, B01
 //Create objects
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
+
+IntervalTimer tofTimer;
+volatile double distance;
+volatile boolean distanceStatus;
 
 uint32_t SET_VALUE = 150;
 uint32_t ERROR_MARGIN = 10;
@@ -41,23 +45,18 @@ void setup() {
     while (1);
   }
   
+  tofTimer.begin(getDistance, 10000);
+  tofTimer.priority(30);
+
   Serial.printf("LCD TOF test \n");
 }
 
 void loop() {
   String dataString = "";
-
-  //Create and initialize TOF object
-  VL53L0X_RangingMeasurementData_t measure;
-  lox.rangingTest(&measure, false);  // pass in 'true' to get debug data printout!
-
-  //Get measurement if data is valid and in range (30mm - 2000mm)
-  uint32_t measurement = measure.RangeMilliMeter;
-  if (measure.RangeStatus != 4)  // phase failures have incorrect data
+  
+  if (distanceStatus != true)  // phase failures have incorrect data
   {
-    Serial.print("Distance (mm): ");
-    Serial.println(measurement);
-    dataString += String((measurement));
+    dataString += String((distance));
   } 
   else
   {
@@ -66,7 +65,7 @@ void loop() {
 
   //Print to display
   lcd.clear();
-  updateStatusBar(SET_VALUE, measurement, ERROR_MARGIN, 1);
+  updateStatusBar(SET_VALUE, distance, ERROR_MARGIN, 1);
   lcd.setCursor(0, 0);
   lcd.print(dataString);
 
@@ -76,6 +75,30 @@ void loop() {
   digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
   delay(75);
 }
+
+void getDistance ()
+{
+  distanceStatus = true;
+  int numAverages = 50;
+  int sumMeasurements = 0;
+
+  for (int i; i < numAverages; i++)
+  {
+    //Create and initialize TOF object
+    VL53L0X_RangingMeasurementData_t measure;
+    lox.rangingTest(&measure, false);  // pass in 'true' to get debug data printout!
+
+    //Get measurement if data is valid and in range (30mm - 2000mm)
+    sumMeasurements += measure.RangeMilliMeter;
+    if (measure.RangeStatus == 4)  // phase failures have incorrect data
+    {
+      distanceStatus = false;
+    } 
+  }
+
+  distance = (double) sumMeasurements / numAverages;
+}
+
 
 //contants to avoid magic numbers and improve code legibility
 uint8_t LCD_GREATER_SHIFT = 8;
@@ -88,7 +111,7 @@ uint8_t LCD_CUST_CHECK = 0;
 
 //Display an indicator bar on the LCD. The indicator bar shows the user where the target value needs to be and how many error margins the current value is off
 //Ex: Value is 3 error margins greater than target, X represents a box: ____[]__X__
-void updateStatusBar(uint32_t targetValue, uint32_t currentValue, int errorMargin, uint8_t lineToPrint) 
+void updateStatusBar(uint32_t targetValue, double currentValue, int errorMargin, uint8_t lineToPrint) 
 {
   signed int error = targetValue - currentValue;
   signed int numErrorMarginOff = error / errorMargin;
