@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "LcdHelper.h"
 
-void getDistance();
+int getDistance();
 
 // Create lcd
 LcdHelper lcd(0x3F, 16, 2);
@@ -18,6 +18,11 @@ uint32_t ERROR_MARGIN = 10;
 // Time of flight sensor
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 int distance;
+int const SIZE = 7;
+int buffer[SIZE] = {0};
+int count = 0;
+int prevDist = 0;
+int sampleTime = 1;
 
 void setup()
 {
@@ -46,28 +51,55 @@ void setup()
 
 void loop()
 {
-  String dataString = "";
 
   // Get Measurement
-  VL53L0X_RangingMeasurementData_t measure;
-  lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-  distance = measure.RangeMilliMeter;
+  int distance = getDistance();
+  sampleTime = millis() - sampleTime;
+  float speed = (float) (abs(distance - prevDist) * 100) / (sampleTime);
+  Serial.printf("Sample time: %.2f, Distance: %d, Previous Distance: %d\n", speed, distance, prevDist);
 
-   // phase failures have incorrect data
-  if (measure.RangeStatus != 4)
-    dataString += String((distance));
-  else
-    dataString += String("error");
+  prevDist = distance;
+  sampleTime = millis();
 
   // Print to display
   lcd.updateStatusBar(SET_VALUE, distance, ERROR_MARGIN);
   lcd.setCursor(0, 0);
-  lcd.print(dataString);
+  lcd.print(distance);
   lcd.print("  ");
+  lcd.setCursor(0, 1);
+  lcd.print(speed);
+  lcd.print(" mm/s  ");
 
   // 20ms delay and blink LED
   digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
   // delay(75);                       // wait for a second
   // digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
   // delay(75);
+}
+
+
+//Ring buffer implementation
+int getDistance ()
+{
+  //Get measurement
+  VL53L0X_RangingMeasurementData_t measure;
+  lox.rangingTest(&measure, false);
+
+  //Save valid data into ring buffer 
+  if (measure.RangeStatus != 4)
+  {
+    buffer[count] = measure.RangeMilliMeter;
+    count = (count + 1) % SIZE;
+  }
+
+  //Calculate total
+  int total = 0;
+  for (int i = 0; i < SIZE; i++)
+  {
+    total += buffer[i];
+  }
+
+  //Calculate and return average
+  int average = total / SIZE;
+  return average;
 }
