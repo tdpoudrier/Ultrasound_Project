@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "Adafruit_VL53L0X.h"
+#include <DM542T.h>
 
 //GPIO constants
 #define DIRECTION 2
@@ -13,17 +14,7 @@
 
 //Function prototypes
 void updateStatusBar(uint32_t, uint32_t, int, uint8_t);
-void StepAwayFromMotor(uint8_t, uint8_t);
-void StepTowardMotor(uint8_t, uint8_t);
-void DM542T_begin();
 void MoveMotor();
-
-IntervalTimer myTimer;
-
-bool button1_value = false;
-bool button2_value = false;
-bool limit1_value = false;
-bool limit2_value = false; 
 
 //Custom Characters
 byte bar[] = { B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
@@ -33,6 +24,9 @@ byte checkMark[] = { B00000, B00001, B00001, B00010, B00010, B10100, B10100, B01
 //Create objects
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
+DM542T motor(DIRECTION, PULSE);
+IntervalTimer myTimer;
+
 
 uint32_t SET_VALUE = 150;
 uint32_t ERROR_MARGIN = 10;
@@ -70,7 +64,7 @@ void setup()
   Serial.println(F("booted LCD"));
 
   //initalize stepper motor controller
-  DM542T_begin();
+  motor.begin();
   myTimer.begin(MoveMotor, 500);
   myTimer.priority(20);
 } 
@@ -105,51 +99,23 @@ void loop()
 
 }
 
-void DM542T_begin()
-{
-  digitalWrite(PULSE, HIGH); //Set pulse pin high 
-}
-
-void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
-{
-  //direction leads pulse by >5us
-  digitalWrite(directionPin, LOW);
-  delayMicroseconds(6);
-
-  //pulse width is >2.5us
-  digitalWrite(pulsePin, LOW);
-  delayMicroseconds(10);
-
-  digitalWrite(pulsePin, HIGH);
-}
-
-void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
-{
-  //direction leads pulse by >5us
-  digitalWrite(directionPin, HIGH);
-  delayMicroseconds(6); 
-
-  //pulse width is >2.5us
-  digitalWrite(pulsePin, LOW);
-  delayMicroseconds(10);
-
-  digitalWrite(pulsePin, HIGH);
-}
-
 void MoveMotor ()
 {
-  button1_value = digitalRead(BUTTON_1);
-  button2_value = digitalRead(BUTTON_2);
-  
-  limit1_value = digitalRead(LIM_SWITCH_1);
-  limit2_value = digitalRead(LIM_SWITCH_2);
+  bool button1_value = digitalRead(BUTTON_1);
+  bool button2_value = digitalRead(BUTTON_2);
+  bool limit1_value = digitalRead(LIM_SWITCH_1);
+  bool limit2_value = digitalRead(LIM_SWITCH_2);
 
   if(button1_value == HIGH && limit1_value != HIGH)
   {
-    StepAwayFromMotor(DIRECTION, PULSE);
+    motor.SetDirection(HIGH);
+    motor.StepMotor();
   }
   else if (button2_value == HIGH && limit2_value != HIGH)
-    StepTowardMotor(DIRECTION, PULSE);
+  {
+    motor.SetDirection(LOW);
+    motor.StepMotor();
+  }
 }
 
 

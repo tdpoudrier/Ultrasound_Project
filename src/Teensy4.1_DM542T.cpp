@@ -8,6 +8,7 @@
 */
 
 #include <Arduino.h>
+#include <DM542T.h>
 
 //Define GPIO pins
 #define DIRECTION_PIN 2
@@ -18,18 +19,10 @@
 #define limitSwitch2 12
 
 //Function declarations
-void StepAwayFromMotor(uint8_t, uint8_t);
-void StepTowardMotor(uint8_t, uint8_t);
-void DM542T_begin();
 void MoveMotor();
 
 IntervalTimer myTimer;
-
-bool button1_value = false;
-bool button2_value = false;
-
-bool limit1_value = false;
-bool limit2_value = false;
+DM542T motor(DIRECTION_PIN, PULSE_PIN);
 
 void setup() 
 {
@@ -45,58 +38,29 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
-  DM542T_begin();
+  motor.begin();
 
   myTimer.begin(MoveMotor, 500);
   myTimer.priority(20);
 } 
 
-void loop() 
+void loop() {}
+
+void MoveMotor()
 {
-  button1_value = digitalRead(button1);
-  button2_value = digitalRead(button2);
-  
-  limit1_value = digitalRead(limitSwitch1);
-  limit2_value = digitalRead(limitSwitch2);
-}
+  bool button1_value = digitalRead(button1);
+  bool button2_value = digitalRead(button2);
+  bool limit1_value = digitalRead(limitSwitch1);
+  bool limit2_value = digitalRead(limitSwitch2);
 
-void DM542T_begin()
-{
-  digitalWrite(PULSE_PIN, HIGH); //Set pulse pin high 
-}
-
-void StepTowardMotor(uint8_t directionPin, uint8_t pulsePin)
-{
-  //direction leads pulse by >5us
-  digitalWrite(directionPin, LOW);
-  delayMicroseconds(6);
-
-  //pulse width is >2.5us
-  digitalWrite(pulsePin, LOW);
-  delayMicroseconds(10);
-
-  digitalWrite(pulsePin, HIGH);
-}
-
-void StepAwayFromMotor(uint8_t directionPin, uint8_t pulsePin)
-{
-  //direction leads pulse by >5us
-  digitalWrite(directionPin, HIGH);
-  delayMicroseconds(6); 
-
-  //pulse width is >2.5us
-  digitalWrite(pulsePin, LOW);
-  delayMicroseconds(10);
-
-  digitalWrite(pulsePin, HIGH);
-}
-
-void MoveMotor ()
-{
   if(button1_value == HIGH && limit1_value != HIGH)
   {
-    StepAwayFromMotor(DIRECTION_PIN, PULSE_PIN);
+    motor.SetDirection(HIGH);
+    motor.StepMotor();
   }
   else if (button2_value == HIGH && limit2_value != HIGH)
-    StepTowardMotor(DIRECTION_PIN, PULSE_PIN);
+  {
+    motor.SetDirection(LOW);
+    motor.StepMotor();
+  }
 }
