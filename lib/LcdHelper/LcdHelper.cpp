@@ -1,3 +1,10 @@
+/**
+ * Author: Tevin Poudrier
+ * Date: Thu 01 Feb 2024 11:14 AM MDT
+ * Description: Source file for LcdHelper object
+ *  this object stores additonal status bar functions for LiquidCrystal_I2C
+*/
+
 #include <LcdHelper.h>
 
 // Custom Characters
@@ -36,10 +43,13 @@ int LcdHelper::getEndIndex ()
 int prevIndex = 0;
 void LcdHelper::updateStatusBar(uint32_t targetValue, int currentValue, int errorMargin)
 {
-    signed int error = targetValue - currentValue;
-    signed int numErrorMarginOff = error / errorMargin;
     uint8_t indexToPrint;
 
+    //Calculate error and number of error margins off from target value
+    signed int error = targetValue - currentValue;
+    signed int numErrorMarginOff = error / errorMargin;
+
+    //Calculate index to print at
     //numErrorMarginOff is signed, so it gives error in both directions
     indexToPrint = MiddleIndex - numErrorMarginOff;
 
