@@ -1,6 +1,11 @@
 /**
+ * Author: Tevin Poudrier
+ * Date: Thu 01 Feb 2024 11:44 AM MDT
+ * Description: Source file for DM542T object
+ *      Controls timing and stepping of DM542T Stepper motor controller
  * 
 */
+
 #include <DM542t.h>
 
 DM542T::DM542T(uint8_t directionPin, uint8_t pulsePin)
@@ -10,7 +15,6 @@ DM542T::DM542T(uint8_t directionPin, uint8_t pulsePin)
     CurrentDirection = LOW;
 }
 
-//Initalize outputs
 void DM542T::begin()
 {
     digitalWrite(PulsePin, HIGH);
