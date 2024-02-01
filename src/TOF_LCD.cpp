@@ -41,7 +41,7 @@ void setup()
   lcd.setStatusBarArea(10, 14, 0);
   lcd.clear();
 
-  // check if TOF is bootted, halt if failed
+  // Boot TOF, halt if failed
   if (!lox.begin())
   {
     Serial.println(F("Failed to boot VL53L0X"));
