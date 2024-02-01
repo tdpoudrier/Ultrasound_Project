@@ -1,6 +1,10 @@
 /**
- * Display the current value of the VL53L0X Time-of-Flight sensor (TOF) and a status bar showning how far the current value is from the target value
- * LCD and TOF are connected via I2C1 on teensy 4.1
+ * Author: Tevin Poudrier
+ * Date: Thur 01 Feb 2024 10:44 AM MDT
+ * Description
+ *    Display the current value of the VL53L0X Time-of-Flight sensor (TOF) and a status bar showning how far the current value is from the target value.
+ *    LCD is connected to I2C1 (Wire1) on teensy 4.1, through the TXB0108 logic level shifter. It is powered by 5V. Recommended to find an I2C safe logic shifter
+ *    TOF is connected to I2C (Wire) on teensy 4.1.
  **/
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -10,12 +14,12 @@
 
 int getDistance();
 
-// Create lcd
+// Create 16x2 lcd, LcdHelper contains additional functions for status bar
 LcdHelper lcd(0x3F, 16, 2);
-uint32_t SET_VALUE = 150;
-uint32_t ERROR_MARGIN = 10;
+uint32_t const SET_VALUE = 150;
+uint32_t const ERROR_MARGIN = 10;
 
-// Time of flight sensor
+// Create Time-of-flight (TOF) object and variables associated with it
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 int distance;
 int const SIZE = 7;
@@ -28,6 +32,7 @@ void setup()
 {
   Serial.begin(9600);
 
+  //Turn on builtin led to know the board is powered
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
@@ -36,14 +41,16 @@ void setup()
   lcd.setStatusBarArea(10, 14, 0);
   lcd.clear();
 
-  // check if TOF is bootted
+  // check if TOF is bootted, halt if failed
   if (!lox.begin())
   {
     Serial.println(F("Failed to boot VL53L0X"));
     while (1)
       ;
   }
+  //lox.startRangeContinuous();
 
+  //Print lcd variables to verify setup
   Serial.printf("LCD TOF test \n");
   Serial.printf("start index: %d, end index: %d\n", lcd.getStartIndex(), lcd.getEndIndex());
   Serial.printf("Middle Index: %d", (lcd.getStartIndex() - lcd.getEndIndex()) / 2);
@@ -52,29 +59,32 @@ void setup()
 void loop()
 {
 
-  // Get Measurement
+  // Get Measurement and time
   int distance = getDistance();
   sampleTime = millis() - sampleTime;
-  float speed = (float) (abs(distance - prevDist) * 100) / (sampleTime);
-  Serial.printf("Sample time: %.2f, Distance: %d, Previous Distance: %d\n", speed, distance, prevDist);
 
-  prevDist = distance;
+  //Calculate speed
+  float speed = (float) (abs(distance - prevDist) * 100) / (sampleTime);
+  Serial.printf("Sample time: %d, Distance: %d, Previous Distance: %d\n", sampleTime, distance, prevDist);
+
+  //Set prev time to current program time before calling LCD functions
   sampleTime = millis();
 
   // Print to display
   lcd.updateStatusBar(SET_VALUE, distance, ERROR_MARGIN);
-  lcd.setCursor(0, 0);
-  lcd.print(distance);
-  lcd.print("  ");
-  lcd.setCursor(0, 1);
-  lcd.print(speed);
-  lcd.print(" mm/s  ");
 
-  // 20ms delay and blink LED
-  digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-  // delay(75);                       // wait for a second
-  // digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
-  // delay(75);
+  if (prevDist != distance)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print(distance);
+    lcd.print("  ");
+    lcd.setCursor(0, 1);
+    lcd.print(speed);
+    lcd.print(" mm/s  ");
+  }
+
+  //save previous distance
+  prevDist = distance;
 }
 
 
